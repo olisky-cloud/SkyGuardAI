@@ -1,18 +1,29 @@
-# SkyGuard AI
+# 🌦 SkyGuard AI
 
-SkyGuard AI ist ein Open-Source-Wetterassistent.
+**SkyGuard AI** ist ein Open-Source Wetterassistent für Android (Termux), der Wetterdaten in Echtzeit abruft und automatisch über Telegram sendet.
 
-## Ziel
+Entwickelt für 24/7 Betrieb auf Smartphones ohne PC.
 
-Ein intelligenter Wetterassistent für Telegram mit:
+---
 
-- Wettervorhersagen
-- Regenwarnungen
-- Sturmwarnungen
-- KI-Analyse
-- Datenschutz
-- Open Source
+## 🚀 Features
 
-## Status
+- 🌡 Echtzeit Wetterdaten (Open-Meteo API)
+- 🌧 Regenwahrscheinlichkeit
+- 💨 Windanalyse
+- 🚨 Sturmwarnungen
+- 📲 Telegram Benachrichtigungen
+- 🔁 Automatischer 30-Minuten Zyklus
+- 🧠 Modulare Struktur (leicht erweiterbar)
 
-🚧 Entwicklung gestartet
+---
+
+## 📱 Installation (Termux)
+
+```bash
+pkg update && pkg upgrade
+pkg install python git
+git clone https://github.com/olisky-cloud/SkyGuardAI.git
+cd SkyGuardAI
+pip install -r requirements.txt
+python main.py
