@@ -1,5 +1,16 @@
-import time
+last_wakeup = None
+def wakeup_message():
+    now = datetime.now().strftime("%H:%M")
 
+    return f"""🌅 Guten Morgen Oli!
+
+🕒 {now}
+🌦 SkyGuard AI läuft stabil
+📡 System aktiv
+🚀 Version 1.1
+"""
+import time
+from datetime import datetime
 from config.config import INTERVAL
 from modules.weather import get_weather
 from modules.telegram import send_message
@@ -26,7 +37,20 @@ def build_message(w):
 
 
 def run_once():
-    w = get_weather()
+global last_wakeup
+
+today = datetime.now().date()
+
+if last_wakeup != today:
+    send_message(wakeup_message())
+    last_wakeup = today
+from modules.updater import check_update, pull_update
+   update, info = check_update()
+
+if update:
+    send_message("🔄 Update verfügbar! SkyGuard AI aktualisiert sich...")
+    pull_update()
+ w = get_weather()
 
     log(f"Wetter: {w}")
 
