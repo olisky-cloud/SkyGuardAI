@@ -1,10 +1,13 @@
 import requests
-from config.config import TOKEN, CHAT_ID
+from config.config import TELEGRAM_TOKEN, CHAT_ID
+
+URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
+
 
 def send_message(text):
-    url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+    if not CHAT_ID:
+        print("CHAT_ID fehlt")
+        return
 
-    requests.post(url, data={
-        "chat_id": CHAT_ID,
-        "text": text
-    })
+    requests.get(URL + f"/sendMessage?chat_id={CHAT_ID}&text={text}")
+

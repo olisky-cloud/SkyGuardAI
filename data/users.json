@@ -1,0 +1,11 @@
+{
+  "users": {
+    "user_001": {
+      "name": "Oli",
+      "plan": "pro",
+      "seats": 1,
+      "used_seats": 1,
+      "created": "2026-01-01"
+    }
+  }
+}

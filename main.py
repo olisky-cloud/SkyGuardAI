@@ -1,81 +1,115 @@
-last_wakeup = None
-def wakeup_message():
-    now = datetime.now().strftime("%H:%M")
-
-    return f"""🌅 Guten Morgen Oli!
-
-🕒 {now}
-🌦 SkyGuard AI läuft stabil
-📡 System aktiv
-🚀 Version 1.1
-"""
 import time
+import requests
 from datetime import datetime
-from config.config import INTERVAL
-from modules.weather import get_weather
-from modules.telegram import send_message
-from modules.logger import log
+from threading import Thread
+
+from config.config import TELEGRAM_TOKEN, CHAT_ID, INTERVAL
 
 
-def build_message(w):
-    msg = f"""🌦 SkyGuard AI
-
-🌡 Temperatur: {w['temp']} °C
-💨 Wind: {w['wind']} km/h
-🌧 Regenwahrscheinlichkeit: {w['rain']} %
-"""
-
-    if w["wind"] >= 40:
-        msg += "\n\n🚨 Sturmwarnung!"
-    elif w["wind"] >= 25:
-        msg += "\n\n⚠️ Starker Wind."
-
-    if w["rain"] >= 80:
-        msg += "\n☔ Hohe Regenwahrscheinlichkeit."
-
-    return msg
+# -----------------------------
+# SERVER
+# -----------------------------
+SERVER_URL = "http://127.0.0.1:8000"
 
 
-def run_once():
-global last_wakeup
-
-today = datetime.now().date()
-
-if last_wakeup != today:
-    send_message(wakeup_message())
-    last_wakeup = today
-from modules.updater import check_update, pull_update
-   update, info = check_update()
-
-if update:
-    send_message("🔄 Update verfügbar! SkyGuard AI aktualisiert sich...")
-    pull_update()
- w = get_weather()
-
-    log(f"Wetter: {w}")
-
-    msg = build_message(w)
-
-    send_message(msg)
-
-    log("Telegram-Nachricht gesendet.")
+def get_server_weather():
+    try:
+        r = requests.get(SERVER_URL + "/weather", timeout=3)
+        return r.json()
+    except:
+        return {"temp": 0, "wind": 0, "rain": 0}
 
 
-def main():
-    print("================================")
-    print("      SkyGuard AI v1.0")
-    print("================================")
-    print("Überwachung gestartet.\n")
+# -----------------------------
+# TELEGRAM
+# -----------------------------
+URL = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}"
+
+
+def send_message(text):
+    if not CHAT_ID:
+        print("CHAT_ID fehlt")
+        return
+    requests.get(URL + f"/sendMessage?chat_id={CHAT_ID}&text={text}")
+
+
+# -----------------------------
+# COMMANDS
+# -----------------------------
+def handle_command(text):
+    text = text.lower()
+
+    if text == "/start":
+        return "🤖 Atlas aktiv"
+
+    if text == "/status":
+        return "🟢 System läuft stabil"
+
+    if text == "/weather":
+        w = get_server_weather()
+        return f"""🌦 Wetter
+
+🌡 {w['temp']}°C
+💨 {w['wind']} km/h
+🌧 {w['rain']}%"""
+
+    if text == "/help":
+        return "/start /status /weather /help"
+
+    return "❓ Unbekannt"
+
+
+# -----------------------------
+# TELEGRAM POLLING
+# -----------------------------
+last_update_id = 0
+
+
+def telegram_loop():
+    global last_update_id
+
+    print("📡 Telegram aktiv")
 
     while True:
         try:
-            run_once()
-        except Exception as e:
-            print("Fehler:", e)
-            log(f"FEHLER: {e}")
+            r = requests.get(URL + "/getUpdates").json()
 
+            for update in r.get("result", []):
+                uid = update["update_id"]
+
+                if uid <= last_update_id:
+                    continue
+
+                last_update_id = uid
+
+                msg = update.get("message", {})
+                text = msg.get("text", "")
+                chat_id = msg.get("chat", {}).get("id")
+
+                if text:
+                    response = handle_command(text)
+                    requests.get(URL + f"/sendMessage?chat_id={chat_id}&text={response}")
+
+            time.sleep(2)
+
+        except Exception as e:
+            print("Error:", e)
+            time.sleep(5)
+
+
+# -----------------------------
+# MAIN LOOP
+# -----------------------------
+def run_loop():
+    while True:
+        print("🤖 Atlas läuft... " + str(datetime.now()))
         time.sleep(INTERVAL)
 
 
-if __name__ == "__main__":
-    main()
+# -----------------------------
+# START
+# -----------------------------
+print("🚀 Atlas startet...")
+
+Thread(target=telegram_loop, daemon=True).start()
+run_loop()
